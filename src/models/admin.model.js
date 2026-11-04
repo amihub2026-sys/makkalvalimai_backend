@@ -1,0 +1,1 @@
+const {Schema,model}=require('mongoose');const s=new Schema({email:{type:String,lowercase:true,unique:true,required:true},passwordHash:{type:String,required:true},role:{type:String,enum:['admin','editor'],default:'admin'},active:{type:Boolean,default:true}},{timestamps:true});module.exports=model('AdminUser',s);

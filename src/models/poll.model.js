@@ -1,0 +1,1 @@
+const {Schema,model}=require('mongoose');const bi={ta:{type:String,default:''},en:{type:String,default:''}};const s=new Schema({id:{type:String,unique:true,required:true},question:bi,options:[bi],active:{type:Boolean,default:false},expiresAt:Date},{timestamps:true});s.set('id',false);module.exports=model('Poll',s);

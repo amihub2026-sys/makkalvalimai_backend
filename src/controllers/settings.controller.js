@@ -1,0 +1,1 @@
+const service=require('../services/settings.service');const {wrap}=require('../utils/common');exports.public=wrap(async(req,res)=>res.json(await service.get()));exports.adminList=wrap(async(req,res)=>res.json(await service.get()));exports.save=wrap(async(req,res)=>res.json(await service.save(req.body)));

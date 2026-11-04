@@ -1,0 +1,3 @@
+const M=require('../models/ad.model');const {z}=require('zod');const {safeUrl,clean}=require('../utils/common');const sch=z.object({brand:z.string().min(2).max(160),position:z.enum(['banner','sidebar','popup']),image:safeUrl.default(''),link:safeUrl.default(''),caption:z.string().max(500).default(''),enabled:z.boolean().default(false)});exports.public=async()=> (await M.find({enabled:true}).limit(50).lean()).map(clean);exports.all=async()=> (await M.find().limit(200).lean()).map(clean);exports.save=async(id,b)=>clean(await M.findOneAndUpdate({id},{$set:sch.parse(b),$setOnInsert:{id}},{upsert:true,new:true}));
+
+exports.remove=async id=>{const x=await M.findOneAndDelete({id});if(!x)throw require('../utils/common').err(404,'Not found');return {deleted:true};};

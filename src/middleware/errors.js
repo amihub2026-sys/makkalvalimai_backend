@@ -1,0 +1,1 @@
+module.exports=(e,req,res,next)=>{if(res.headersSent)return next(e);let status=e.status||500;if(e.name==='ZodError')status=400;if(e.code===11000)status=409;if(e.name==='MulterError'||e.message==='Unsupported file type')status=400;if(status>=500)console.error(e);res.status(status).json({error:status>=500?'Internal server error':e.message});};

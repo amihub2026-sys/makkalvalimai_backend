@@ -1,0 +1,1 @@
+const {Schema,model}=require('mongoose');const s=new Schema({id:{type:String,unique:true,required:true},brand:String,position:{type:String,enum:['banner','sidebar','popup']},image:String,link:String,caption:String,enabled:{type:Boolean,default:false}},{timestamps:true});s.set('id',false);module.exports=model('Advertisement',s);

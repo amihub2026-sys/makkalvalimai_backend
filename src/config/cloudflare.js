@@ -1,0 +1,1 @@
+const {S3Client}=require('@aws-sdk/client-s3');module.exports=cfg=>new S3Client({region:'auto',endpoint:`https://${cfg.account}.r2.cloudflarestorage.com`,credentials:{accessKeyId:cfg.key,secretAccessKey:cfg.secret}});
