@@ -2,21 +2,30 @@
 const CategoryService = require("../services/news-category.service");
 const { wrap } = require("../utils/common");
 
-// PUBLIC: Get all active news categories
+// ==========================================
+// PUBLIC: GET ACTIVE NEWS CATEGORIES
+// ==========================================
+
 exports.publicList = wrap(async (req, res) => {
   const categories = await CategoryService.publicList();
 
   res.json(categories);
 });
 
-// ADMIN: Get all categories, including disabled ones
+// ==========================================
+// ADMIN: GET ALL NEWS CATEGORIES
+// ==========================================
+
 exports.adminList = wrap(async (req, res) => {
   const categories = await CategoryService.adminList();
 
   res.json(categories);
 });
 
-// ADMIN: Create or update a news category
+// ==========================================
+// ADMIN: CREATE OR UPDATE CATEGORY
+// ==========================================
+
 exports.save = wrap(async (req, res) => {
   const { slug } = req.params;
 
@@ -29,5 +38,21 @@ exports.save = wrap(async (req, res) => {
     success: true,
     message: "News category saved successfully",
     category
+  });
+});
+
+// ==========================================
+// ADMIN: DELETE NEWS CATEGORY
+// ==========================================
+
+exports.remove = wrap(async (req, res) => {
+  const { slug } = req.params;
+
+  const result = await CategoryService.remove(slug);
+
+  res.json({
+    success: true,
+    message: "News category deleted successfully",
+    ...result
   });
 });

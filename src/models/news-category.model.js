@@ -52,6 +52,22 @@ const newsCategorySchema = new Schema(
       default: false
     },
 
+    // ==========================================
+    // HEADER NAVIGATION TYPE
+    // ==========================================
+
+    headerType: {
+      type: String,
+      enum: [
+        "main",
+        "more",
+        "about",
+        "hidden"
+      ],
+      default: "more",
+      trim: true
+    },
+
     sortOrder: {
       type: Number,
       default: 0,

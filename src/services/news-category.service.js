@@ -1,7 +1,13 @@
 
 const NewsCategory = require("../models/news-category.model");
+const News = require("../models/news.model");
+
 const { z } = require("zod");
 const { err } = require("../utils/common");
+
+// ==========================================
+// CATEGORY VALIDATION
+// ==========================================
 
 const categorySchema = z.object({
   name: z.object({
@@ -9,9 +15,23 @@ const categorySchema = z.object({
     en: z.string().trim().min(1).max(120),
   }),
 
+  // ENABLE / DISABLE CATEGORY
   active: z.boolean().default(true),
 
+  // SHOW / HIDE CATEGORY IN WEBSITE MENU
   showInMenu: z.boolean().default(false),
+
+  // HEADER NAVIGATION POSITION
+  // Optional to keep older frontend requests working.
+  // The Mongoose model provides the default: "more".
+  headerType: z
+    .enum([
+      "main",
+      "more",
+      "about",
+      "hidden",
+    ])
+    .optional(),
 
   sortOrder: z.number().int().min(0).default(0),
 
@@ -23,25 +43,47 @@ const validSlug = (value) =>
   value.length <= 80 &&
   /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 
-// Public: get active news categories
+// ==========================================
+// PUBLIC: LIST ACTIVE CATEGORIES
+// ==========================================
+
 exports.publicList = async () => {
-  return NewsCategory.find({ active: true })
-    .select("slug name showInMenu sortOrder")
-    .sort({ sortOrder: 1, slug: 1 })
+  return NewsCategory.find({
+    active: true,
+  })
+    .select(
+      "slug name active showInMenu headerType sortOrder"
+    )
+    .sort({
+      sortOrder: 1,
+      slug: 1,
+    })
     .lean();
 };
 
-// Admin: get all categories, including disabled ones
+// ==========================================
+// ADMIN: LIST ALL CATEGORIES
+// ==========================================
+
 exports.adminList = async () => {
   return NewsCategory.find()
-    .sort({ sortOrder: 1, slug: 1 })
+    .sort({
+      sortOrder: 1,
+      slug: 1,
+    })
     .lean();
 };
 
-// Admin: create or update a category
+// ==========================================
+// ADMIN: CREATE OR UPDATE CATEGORY
+// ==========================================
+
 exports.save = async (slug, body) => {
   if (!validSlug(slug)) {
-    throw err(400, "Invalid category slug");
+    throw err(
+      400,
+      "Invalid category slug"
+    );
   }
 
   const data = categorySchema.parse(body);
@@ -50,7 +92,9 @@ exports.save = async (slug, body) => {
     { slug },
     {
       $set: data,
-      $setOnInsert: { slug },
+      $setOnInsert: {
+        slug,
+      },
     },
     {
       upsert: true,
@@ -61,7 +105,69 @@ exports.save = async (slug, body) => {
   ).lean();
 };
 
-// Validate an article's category against MongoDB
+// ==========================================
+// ADMIN: DELETE CATEGORY SAFELY
+// ==========================================
+
+exports.remove = async (slug) => {
+  if (!validSlug(slug)) {
+    throw err(
+      400,
+      "Invalid category slug"
+    );
+  }
+
+  // Check whether the category exists.
+  const category = await NewsCategory.findOne({
+    slug,
+  }).lean();
+
+  if (!category) {
+    throw err(
+      404,
+      "News category not found"
+    );
+  }
+
+  // Check ALL linked news, including:
+  // 1. Published news
+  // 2. Unpublished news
+  // 3. Draft articles
+
+  const newsCount = await News.countDocuments({
+    kind: slug,
+  });
+
+  // Do not delete the category if it contains news.
+  if (newsCount > 0) {
+    throw err(
+      409,
+      `Cannot delete this category. It contains ${newsCount} news article(s). First delete all news articles under this category. Then delete the category.`
+    );
+  }
+
+  // Delete only when no news articles are linked.
+  const result = await NewsCategory.deleteOne({
+    slug,
+  });
+
+  if (result.deletedCount === 0) {
+    throw err(
+      404,
+      "News category not found"
+    );
+  }
+
+  return {
+    deleted: true,
+    slug,
+  };
+};
+
+// ==========================================
+// VALIDATE CATEGORY FOR PUBLISHING
+// ==========================================
+
 exports.validateForPublishing = async (
   slug,
   source = ""
@@ -72,14 +178,20 @@ exports.validateForPublishing = async (
   }).lean();
 
   if (!category) {
-    throw err(400, "Invalid or disabled news category");
+    throw err(
+      400,
+      "Invalid or disabled news category"
+    );
   }
 
   if (
     category.requiresVerifiedSource &&
     !source.trim()
   ) {
-    throw err(400, "Verified source required");
+    throw err(
+      400,
+      "Verified source required"
+    );
   }
 
   return category;
